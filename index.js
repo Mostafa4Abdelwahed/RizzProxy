@@ -1,7 +1,7 @@
 import express from "express";
 import { createServer } from "node:http";
 import { publicPath } from "ultraviolet-static";
-import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
+import { scramjetPath } from "@mercuryworkshop/scramjet/path";
 import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 import { join, normalize, extname, parse, sep } from "node:path";
@@ -12,7 +12,7 @@ import crypto from 'crypto';
 import config from "./config.js";
 import bodyParser from "body-parser";
 import { request as httpsRequest } from "node:https";
-import { existsSync, createWriteStream, createReadStream } from "node:fs";
+import { existsSync, createWriteStream, createReadStream, readFileSync } from "node:fs";
 import { mkdir, rename, unlink, open } from "node:fs/promises";
 
 const app = express();
@@ -155,11 +155,85 @@ app.use(jsonParser, function(req, res, next) {
 }
 // Load our publicPath first and prioritize it over UV.
 app.use(express.static(publicPath));
+// Serve Scramjet's bundle with a small shim appended. Scramjet injects this file into
+// every proxied page; the shim rewrites url(...) inside CSS that games inject at runtime
+// via style.appendChild(document.createTextNode(css)), which Scramjet does not rewrite.
+const POKI_CSS_SHIM = `
+;(function () {
+    if (typeof document === "undefined" || typeof Node === "undefined") return;
+    try { window.__pokiCssShim = 1; } catch (e) {}
+    function rw(u) {
+        if (!u || /^(data:|blob:|#)/.test(u)) return u;
+        try {
+            var base = location.href;
+            var marker = "/scramjet/";
+            var idx = base.indexOf(marker);
+            if (idx >= 0) {
+                var enc = base.slice(idx + marker.length).split("#")[0];
+                try { base = decodeURIComponent(enc); } catch (e) {}
+            }
+            return marker + encodeURIComponent(new URL(u, base).href);
+        } catch (e) {
+            return u;
+        }
+    }
+    function rc(t) {
+        if (typeof t !== "string" || t.indexOf("url(") < 0) return t;
+        return t.replace(/url\\(([^)]*)\\)/g, function (m, x) {
+            var q = "";
+            x = x.trim();
+            var c = x.charAt(0);
+            if (c === '"' || c === "'") { q = c; x = x.slice(1, -1); }
+            return "url(" + q + rw(x) + q + ")";
+        });
+    }
+    try {
+        var ap = Node.prototype.appendChild;
+        Node.prototype.appendChild = function (ch) {
+            try {
+                if (this.tagName === "STYLE" && ch && ch.nodeType === 3) {
+                    ch.textContent = rc(ch.textContent);
+                }
+            } catch (e) {}
+            return ap.call(this, ch);
+        };
+    } catch (e) {}
+})();
+`;
+
+let scramjetBundle = null;
+app.get("/scram/scramjet.all.js", (req, res) => {
+    if (scramjetBundle === null) {
+        scramjetBundle = readFileSync(join(scramjetPath, "scramjet.all.js"), "utf8") + POKI_CSS_SHIM;
+    }
+    res.type("application/javascript").send(scramjetBundle);
+});
+
 // Load vendor files last.
-// The vendor's uv.config.js won't conflict with our uv.config.js inside the publicPath directory.
-app.use("/uv/", express.static(uvPath));
+// Scramjet's static bundle (scramjet.wasm.wasm, scramjet.sync.js, ...).
+app.use("/scram/", express.static(scramjetPath));
 app.use("/epoxy/", express.static(epoxyPath));
 app.use("/baremux/", express.static(baremuxPath));
+
+// Audit results (produced by `node other/audit.mjs`)
+const auditDir = join(process.cwd(), "data", "audit");
+app.get("/audit", (req, res) => {
+  res.sendFile(join(publicPath, "audit.html"));
+});
+app.get("/audit/report.json", (req, res) => {
+  res.sendFile(join(auditDir, "report.json"), (err) => {
+    if (err && !res.headersSent) {
+      res.status(404).json({ error: "No audit report yet. Run: node other/audit.mjs --limit 10" });
+    }
+  });
+});
+app.get("/audit/screens/:file", (req, res) => {
+  const file = normalize(req.params.file).replace(/^[\\/]+/, "");
+  if (!file || file.includes("..")) return res.status(400).end();
+  res.sendFile(join(auditDir, "screens", file), (err) => {
+    if (err && !res.headersSent) res.status(404).end();
+  });
+});
 
 // Error for everything else
 app.use((req, res) => {

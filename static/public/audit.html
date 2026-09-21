@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Audit — Rizz Proxy</title>
+<link rel="shortcut icon" content="/favicon.ico" />
+<style>
+  :root{
+    --bg:#1d1e22; --panel:#26272c; --panel2:#2e2f35; --border:#383940;
+    --text:#eee; --muted:#9a9ba3;
+    --ok:#3fb950; --stall:#d29922; --stallu:#a371f7; --fail:#f85149; --skip:#6e7681;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif}
+  header{display:flex;align-items:center;gap:14px;padding:14px 22px;background:#26272c;border-bottom:1px solid var(--border)}
+  header h1{font-size:20px;margin:0}
+  .status-pill{margin-left:auto;font-size:12px;padding:4px 12px;border-radius:99px;background:var(--panel2);color:var(--muted)}
+  .status-pill.live{color:#7ee787;background:#23863620}
+  main{padding:18px 22px;max-width:1200px;margin:0 auto}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:18px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+  .card .num{font-size:30px;font-weight:700;line-height:1}
+  .card .lbl{font-size:12px;color:var(--muted);margin-top:6px}
+  .card.ok .num{color:var(--ok)} .card.stall .num{color:var(--stall)} .card.stallu .num{color:var(--stallu)} .card.fail .num{color:var(--fail)} .card.skip .num{color:var(--skip)}
+  .bar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden;display:flex;margin-bottom:18px}
+  .bar i{display:block;height:100%}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .toolbar input[type=text]{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:14px}
+  .chip{padding:7px 14px;border-radius:99px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);cursor:pointer;font-size:13px;user-select:none}
+  .chip.on{background:var(--panel);color:var(--text);border-color:#888}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  th,td{padding:9px 12px;text-align:left;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+  th{background:var(--panel2);color:var(--muted);font-weight:600;position:sticky;top:0}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--panel2)}
+  .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
+  .b-ok{background:#23863622;color:var(--ok)} .b-stall{background:#d2992222;color:var(--stall)} .b-stall_unity{background:#a371f722;color:var(--stallu)} .b-fail{background:#f8514922;color:var(--fail)} .b-skipped{background:#6e768122;color:var(--skip)}
+  a{color:#79c0ff;text-decoration:none}
+  .link{cursor:pointer}
+  .link:hover{text-decoration:underline}
+  .err{cursor:help;color:var(--muted)}
+  img.thumb{width:120px;border-radius:6px;border:1px solid var(--border);cursor:pointer}
+  .modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:10}
+  .modal img{max-width:90vw;max-height:90vh;border-radius:8px}
+  .empty{color:var(--muted);text-align:center;padding:40px}
+  .muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Game Audit</h1>
+  <div id="pill" class="status-pill">loading…</div>
+</header>
+<main>
+  <div id="missing" class="empty" style="display:none">
+    No audit report found.<br><br>Run the audit first:<br>
+    <code>node other/audit.mjs --limit 10</code><br><br>
+    The full run checks all <b id="missingTotal"></b> games one by one.
+  </div>
+  <div id="content" style="display:none">
+    <div class="cards" id="cards"></div>
+    <div class="bar" id="bar"></div>
+    <div class="toolbar">
+      <input type="text" id="q" placeholder="Search games…" oninput="render()">
+      <div class="chip on" data-f="all" onclick="setFilter(this)">All</div>
+      <div class="chip" data-f="ok" onclick="setFilter(this)">OK</div>
+      <div class="chip" data-f="stall_unity" onclick="setFilter(this)">Unity stall</div>
+      <div class="chip" data-f="stall" onclick="setFilter(this)">Stall</div>
+      <div class="chip" data-f="fail" onclick="setFilter(this)">Fail</div>
+      <div class="chip" data-f="skipped" onclick="setFilter(this)">Skipped</div>
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>Game</th><th>Status</th><th>Canvas</th><th>Progress</th><th>Time</th><th>Note</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</main>
+<div class="modal" id="modal" onclick="this.style.display='none'"><img id="modalImg" src=""></div>
+
+<script>
+let report = null;
+let filter = "all";
+
+const badge = { ok:["b-ok","OK"], stall:["b-stall","Stall"], stall_unity:["b-stall_unity","Unity stall"], fail:["b-fail","Fail"], skipped:["b-skipped","Skip"] };
+
+async function load(){
+  try {
+    const r = await fetch("/audit/report.json",{cache:"no-store"});
+    if(!r.ok) throw 0;
+    report = await r.json();
+  } catch {
+    document.getElementById("missing").style.display="block";
+    document.getElementById("content").style.display="none";
+    document.getElementById("missingTotal").textContent = "...";
+    return;
+  }
+  document.getElementById("missing").style.display="none";
+  document.getElementById("content").style.display="block";
+  const pill = document.getElementById("pill");
+  pill.textContent = report.running ? "RUNNING — refresh in a bit" : "finished " + (report.generated||"").replace("T"," ").slice(0,19) + (report.total? " · "+report.total+" games total":"");
+  pill.className = "status-pill" + (report.running? " live":"");
+  render();
+}
+
+function setFilter(e){ e.classList.toggle("on", true); document.querySelectorAll(".chip").forEach(c=> c.classList.toggle("on", c===e)); filter=e.dataset.f; render(); }
+
+function render(){
+  if(!report) return;
+  const c = report.counts || {};
+  const cards = document.getElementById("cards");
+  cards.innerHTML = [["ok",c.ok||0],["stall",c.stall||0],["stallu",c.stall_unity||0],["fail",c.fail||0],["skip",c.skipped||0]]
+    .map(([k,n]) => `<div class="card ${k}"><div class="num">${n}</div><div class="lbl">${({ok:"OK",stall:"Stall",stallu:"Unity stall",fail:"Fail",skip:"Skip"})[k]}</div></div>`).join("");
+  const ok=(c.ok||0)+(c.stall||0)+(c.stall_unity||0), tot=(c.ok||0)+(c.stall||0)+(c.stall_unity||0)+(c.fail||0);
+  const pct = tot? Math.round(ok/tot*100):0;
+  document.getElementById("bar").innerHTML =
+    `<i style="width:${pct}%;background:#3fb950"></i>`;
+  const q = (document.getElementById("q").value||"").toLowerCase();
+  const rows = report.rows || [];
+  const tbody = document.getElementById("rows");
+  tbody.innerHTML = "";
+  let n=0;
+  for(const r of rows){
+    if(filter!=="all" && r.status!==filter) continue;
+    if(q && !r.name.toLowerCase().includes(q) && !(r.note||"").toLowerCase().includes(q)) continue;
+    n++;
+    const b=badge[r.status]||badge.fail;
+    const shot = r.screenshot? `<img class="thumb" src="/audit/screens/${encodeURIComponent(r.screenshot)}" onclick="return showShot(this)">` : `<span class="muted">—</span>`;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="muted">${r.index}</td>
+      <td>${r.name} <a class="muted link" onclick="return openRow(this)" data-url="${encodeURIComponent(r.url||'')}" title="${r.title||''}">↗</a></td>
+      <td><span class="badge ${b[0]}">${b[1]}</span></td>
+      <td>${r.canvases??"-"}</td>
+      <td>${(r.progress||(r.maxProgress? r.maxProgress+"%":"-"))}</td>
+      <td>${r.time_s||"-"}</td>
+      <td title="${(r.errors||"").replace(/"/g,"&quot;")}" class="${r.errors?"err":""}">${r.note||"-"}</td>`;
+    tbody.appendChild(tr);
+  }
+  if(!n) tbody.innerHTML=`<tr><td colspan="7" class="empty">no games match</td></tr>`;
+}
+window.showShot = (img)=>{ document.getElementById("modalImg").src=img.src; document.getElementById("modal").style.display="flex"; return false; };
+window.openRow = (a)=> { window.open("/tab?page="+a.dataset.url); return false; };
+load();
+</script>
+</body>
+</html>

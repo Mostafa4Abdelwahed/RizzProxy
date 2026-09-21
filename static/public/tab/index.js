@@ -1,6 +1,29 @@
+"use strict";
+
+let sjframe = null;
+
+function getFrame() {
+    if (!sjframe) {
+        const el = document.getElementById("uv-frame");
+        sjframe = scramjet.createFrame(el);
+        sjframe.addEventListener("urlchange", function (event) {
+            const url = event.url;
+            document.getElementById("nav-bar-address").value = url;
+            if (url.startsWith("https://")) {
+                document.getElementById("https-lock").innerText = "lock";
+            } else if (url.startsWith("http://")) {
+                document.getElementById("https-lock").innerText = "lock_open_right";
+            } else {
+                document.getElementById("https-lock").innerText = "error";
+            }
+        });
+    }
+    return sjframe;
+}
+
 function openEruda() {
     const iframe = document.getElementById("uv-frame");
-    el = document.createElement("script")
+    const el = document.createElement("script");
     el.src = "eruda.js";
     iframe.contentDocument.body.append(el);
 }
@@ -24,51 +47,9 @@ document.getElementById("nav-bar-form").addEventListener("submit", function (eve
 
     const url = search(address.value, searchEngine.value);
 
-    let frame = document.getElementById("uv-frame");
-    frame.src = __uv$config.prefix + __uv$config.encodeUrl(url);
+    getFrame().go(url);
     document.getElementById("https-lock").innerText = "pending";
 });
-
-var lastURL = "";
-
-document.getElementById("uv-frame").onload = function () {
-    lastURL = "";
-    updateURLBar();
-}
-
-setInterval(updateURLBar, 250);
-
-function updateURLBar() {
-    if (document.activeElement.id != "nav-bar-address" || lastURL != decodeUV(document.getElementById("uv-frame").contentWindow.location.href)) {
-        lastURL = decodeUV(document.getElementById("uv-frame").contentWindow.location.href);
-        if (document.getElementById("uv-frame").contentWindow.location.href == "about:blank") {
-            document.getElementById("nav-bar-address").value = "about:blank";
-        } else {
-            document.getElementById("nav-bar-address").value = decodeUV(document.getElementById("uv-frame").contentWindow.location.href);
-            if (document.getElementById("nav-bar-address").value.startsWith("https://")) {
-                document.getElementById("https-lock").innerText = "lock";
-            } else if (document.getElementById("nav-bar-address").value.startsWith("http://")) {
-                document.getElementById("https-lock").innerText = "lock_open_right";
-            } else {
-                document.getElementById("https-lock").innerText = "error";
-            }
-        }
-    }
-}
-
-function decodeUV(str) {
-    if (!str) return str;
-    str = decodeURIComponent(str.substring(str.lastIndexOf('/') + 1));
-    return decodeURIComponent(
-        str
-            .toString()
-            .split('')
-            .map((char, ind) =>
-                ind % 2 ? String.fromCharCode(char.charCodeAt() ^ 2) : char
-            )
-            .join('')
-    );
-}
 
 function windowPopout() {
     var win = window.open();
@@ -76,44 +57,42 @@ function windowPopout() {
     iframe.style.width = "100%";
     iframe.style.height = "100%";
     iframe.style.border = "none";
-    iframe.src = document.getElementById("uv-frame").contentWindow.location.href;
-    win.document.body.appendChild(iframe)
+    iframe.src = document.getElementById("uv-frame").src;
+    win.document.body.appendChild(iframe);
 }
 
 function goForward() {
-    document.getElementById("uv-frame").contentWindow.history.forward();
+    if (sjframe) sjframe.forward();
 }
 
 function goBack() {
-    document.getElementById("uv-frame").contentWindow.history.back();
+    if (sjframe) sjframe.back();
 }
 
 function reloadPage() {
-    document.getElementById("uv-frame").contentWindow.location.reload();
+    if (sjframe) sjframe.reload();
 }
 
 async function startProxy() {
     try {
         await registerSW();
     } catch (err) {
-        alert("Error. Please contact a server administrator. Error Message: " + err.message)
+        alert("Error. Please contact a server administrator. Error Message: " + err.message);
     }
+
+    await window.scramjetReady;
 
     let queryString = new URLSearchParams(window.location.search);
     var url = queryString.get("page");
-    if(url) {
-        let frame = document.getElementById("uv-frame");
-        frame.src = __uv$config.prefix + encodeURIComponent(url);
-        document.getElementById("nav-bar-address").value = "";
-        document.getElementById("https-lock").innerText = "pending";
-        return;
+    if (url) {
+        url = decodeURIComponent(url);
+    } else {
+        url = document.getElementById("uv-start-page").value;
     }
 
-    url = document.getElementById("uv-start-page").value;
-    let frame = document.getElementById("uv-frame");
-    frame.src = __uv$config.prefix + __uv$config.encodeUrl(url);
     document.getElementById("nav-bar-address").value = "";
     document.getElementById("https-lock").innerText = "pending";
+    getFrame().go(url);
 }
 
 startProxy();

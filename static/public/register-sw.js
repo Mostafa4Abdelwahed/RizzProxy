@@ -1,8 +1,8 @@
 "use strict";
 /**
- * Distributed with Ultraviolet and compatible with most configurations.
+ * Scramjet service worker (served from the site root so it controls the whole origin).
  */
-const stockSW = "/uv/sw.js";
+const stockSW = "/sw.js";
 
 /**
  * List of hostnames that are allowed to run serviceworkers on http://

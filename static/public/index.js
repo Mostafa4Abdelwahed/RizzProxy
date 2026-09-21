@@ -22,7 +22,7 @@ form.addEventListener("submit", async (event) => {
   
   showProxy();
 
-  newTab("/tab?page=" + __uv$config.encodeUrl(url));
+  newTab("/tab?page=" + encodeURIComponent(url));
 });
 
 function goHome() {

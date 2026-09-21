@@ -4,7 +4,7 @@
 
 -1,489 games (sourced from Poki)
 
--Uses ultraviolet, a fast and secure proxy
+-Uses Scramjet, a fast and secure proxy
 
 -Clean UI
 
