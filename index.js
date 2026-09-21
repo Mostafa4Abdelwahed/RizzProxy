@@ -26,6 +26,7 @@ const MIME_BY_EXT = {
   ".jpeg": "image/jpeg",
   ".gif": "image/gif",
   ".webp": "image/webp",
+  ".jfif": "image/jpeg",
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
   ".bmp": "image/bmp",
@@ -66,7 +67,7 @@ async function downloadImage(remotePath, filePath) {
   await mkdir(parse(filePath).dir, { recursive: true });
   const tmpPath = filePath + ".tmp";
   return new Promise((resolve, reject) => {
-    const req = httpsRequest({ host: "images.crazygames.com", path: remotePath, method: "GET" }, (res) => {
+    const req = httpsRequest({ host: "img.poki-cdn.com", path: remotePath, method: "GET" }, (res) => {
       if (res.statusCode !== 200) {
         res.resume();
         reject(new Error("upstream returned " + res.statusCode));
@@ -99,8 +100,8 @@ async function downloadImage(remotePath, filePath) {
   });
 }
 
-// Proxies game image thumbnails from images.crazygames.com with a local disk cache,
-// so each image is only downloaded from CrazyGames once.
+// Proxies game image thumbnails from img.poki-cdn.com with a local disk cache,
+// so each image is only downloaded from Poki once.
 app.use("/image/", async (req, res) => {
   let filePath;
   try {
