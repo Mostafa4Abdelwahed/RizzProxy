@@ -15,6 +15,7 @@ import puppeteer from "puppeteer-core";
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import http from "node:http";
 import { fileURLToPath } from "node:url";
 
 const REPO = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -65,6 +66,7 @@ if (has("--help") || has("-h")) {
       "  --screens       save a screenshot per game to data/audit/screens",
       "  --force         re-check games already in the report",
       "  --port P        server port (default 8444)",
+      "  --no-server     don't auto-start the server (assume one is running)",
       "  --list          print how many games remain and exit",
       "  --headful       run Chrome visibly",
     ].join("\n")
@@ -74,36 +76,82 @@ if (has("--help") || has("-h")) {
 
 fs.mkdirSync(SCREENS_DIR, { recursive: true });
 
+const [NODE_MAJOR] = process.versions.node.split(".").map(Number);
+if (NODE_MAJOR < 18) {
+  console.error(`Need Node.js 18+ (you have ${process.versions.node}). Install a newer Node and retry.`);
+  process.exit(1);
+}
+
+if (!fs.existsSync(GAMES_JSON)) {
+  console.error(`Missing ${GAMES_JSON}. Are you running from the RizzProxy folder?`);
+  process.exit(1);
+}
 const games = JSON.parse(fs.readFileSync(GAMES_JSON, "utf8"));
 
 // ---------------- server ----------------
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function waitPort(timeoutMs) {
-  const t0 = Date.now();
-  while (Date.now() - t0 < timeoutMs) {
-    try {
-      const r = await fetch(`http://localhost:${PORT}/`);
-      if (r.ok) return true;
-    } catch {}
-    await sleep(400);
-  }
-  return false;
+
+function pingPort(port) {
+  return new Promise((resolve) => {
+    const req = http.get({ host: "127.0.0.1", port, path: "/", timeout: 2500 }, (res) => {
+      res.resume();
+      resolve(res.statusCode === 200);
+    });
+    req.on("error", () => resolve(false));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(false);
+    });
+  });
+}
+
+function killChild() {
+  if (!serverChild || serverChild.killed || serverChild.exitCode !== null) return;
+  try {
+    if (process.platform === "win32") {
+      spawn("taskkill", ["/pid", String(serverChild.pid), "/T", "/F"], { stdio: "ignore" });
+    } else {
+      serverChild.kill("SIGTERM");
+    }
+  } catch {}
 }
 
 let serverChild = null;
-if (!(await waitPort(4000))) {
+async function ensureServer() {
+  if (has("--no-server")) {
+    console.log("Skipping auto-start (--no-server); expecting an existing server on port " + PORT);
+    return;
+  }
+  if (await pingPort(PORT)) {
+    console.log(`Server already running on port ${PORT}`);
+    return;
+  }
   console.log(`Starting server on port ${PORT}...`);
   serverChild = spawn(process.execPath, ["index.js"], {
     cwd: REPO,
     env: { ...process.env, PORT: String(PORT) },
-    stdio: ["ignore", "inherit", "inherit"],
+    stdio: ["ignore", "pipe", "pipe"],
   });
-  if (!(await waitPort(25000))) {
-    console.error(`Server did not start on http://localhost:${PORT}`);
-    process.exit(1);
+  serverChild.stdout.on("data", (d) => process.stdout.write("[server] " + d.toString()));
+  serverChild.stderr.on("data", (d) => process.stdout.write("[server] " + d.toString()));
+
+  const t0 = Date.now();
+  while (Date.now() - t0 < 25000) {
+    if (await pingPort(PORT)) {
+      console.log(`Server is up: http://localhost:${PORT}`);
+      return;
+    }
+    if (serverChild.exitCode !== null) break;
+    await sleep(800);
   }
+  console.error(
+    `\nServer did not start on http://localhost:${PORT} (child exit code: ${serverChild.exitCode}).\n` +
+      `Start it yourself, then run with --no-server:\n` +
+      `  cd ${REPO}\n  node index.js\n  node other/audit.mjs --no-server --screens`
+  );
+  process.exit(1);
 }
-console.log(`Server: http://localhost:${PORT}`);
+await ensureServer();
 
 // ---------------- report state ----------------
 const report = { running: true, generated: null, total: games.length, counts: {}, rows: [] };
@@ -372,14 +420,14 @@ function finish() {
   report.running = false;
   report.generated = new Date().toISOString();
   saveReport();
-  if (serverChild) serverChild.kill();
+  if (serverChild) killChild();
   console.log("\nDone. Open the results at http://localhost:" + PORT + "/audit (report: data/audit/report.json)");
 }
 
 process.on("SIGINT", () => {
   report.running = false;
   saveReport();
-  if (serverChild) serverChild.kill();
+  killChild();
   process.exit(0);
 });
 
