@@ -13,38 +13,57 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif}
-  header{display:flex;align-items:center;gap:14px;padding:14px 22px;background:#26272c;border-bottom:1px solid var(--border)}
+  header{display:flex;align-items:center;gap:14px;padding:14px 22px;background:#26272c;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
   header h1{font-size:20px;margin:0}
-  .status-pill{margin-left:auto;font-size:12px;padding:4px 12px;border-radius:99px;background:var(--panel2);color:var(--muted)}
+  .status-pill{margin-left:auto;font-size:12px;padding:4px 12px;border-radius:99px;background:var(--panel2);color:var(--muted);white-space:nowrap}
   .status-pill.live{color:#7ee787;background:#23863620}
-  main{padding:18px 22px;max-width:1200px;margin:0 auto}
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:18px}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
-  .card .num{font-size:30px;font-weight:700;line-height:1}
-  .card .lbl{font-size:12px;color:var(--muted);margin-top:6px}
-  .card.ok .num{color:var(--ok)} .card.stall .num{color:var(--stall)} .card.stallu .num{color:var(--stallu)} .card.fail .num{color:var(--fail)} .card.skip .num{color:var(--skip)}
-  .bar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden;display:flex;margin-bottom:18px}
-  .bar i{display:block;height:100%}
-  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-  .toolbar input[type=text]{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:14px}
-  .chip{padding:7px 14px;border-radius:99px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);cursor:pointer;font-size:13px;user-select:none}
+  main{padding:18px 22px;max-width:1300px;margin:0 auto}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:13px 15px}
+  .card .num{font-size:28px;font-weight:700;line-height:1.1}
+  .card .lbl{font-size:12px;color:var(--muted);margin-top:4px}
+  .card .sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .mini{height:4px;background:var(--panel2);border-radius:99px;margin-top:9px;overflow:hidden}
+  .mini i{display:block;height:100%;border-radius:99px}
+  .card.c-ok .mini i{background:var(--ok)} .card.c-stall .mini i{background:var(--stall)} .card.c-stallu .mini i{background:var(--stallu)} .card.c-fail .mini i{background:var(--fail)} .card.c-skip .mini i{background:var(--skip)} .card.c-total .mini i{background:#58a6ff}
+  .card.c-ok .num{color:var(--ok)} .card.c-stall .num{color:var(--stall)} .card.c-stallu .num{color:var(--stallu)} .card.c-fail .num{color:var(--fail)} .card.c-skip .num{color:var(--skip)} .card.c-total .num{color:#58a6ff}
+  .bar{height:24px;border-radius:12px;background:var(--panel2);overflow:hidden;display:flex;margin-bottom:18px;font-size:11px;font-weight:600}
+  .bar div{display:flex;align-items:center;justify-content:center;color:#fff;min-width:34px;cursor:pointer;transition:filter .15s}
+  .bar div:hover{filter:brightness(1.15)}
+  .bar .s-ok{background:var(--ok)} .bar .s-stall{background:var(--stall)} .bar .s-stall_unity{background:var(--stallu)} .bar .s-fail{background:var(--fail)} .bar .s-skipped{background:var(--skip)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .toolbar input[type=text]{flex:1;min-width:180px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:14px}
+  .toolbar input[type=text]:focus{outline:1px solid #58a6ff}
+  .chip{padding:7px 12px;border-radius:99px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);cursor:pointer;font-size:13px;user-select:none;white-space:nowrap}
+  .chip .n{margin-left:5px;opacity:.75}
   .chip.on{background:var(--panel);color:var(--text);border-color:#888}
+  select,button{padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:13px;cursor:pointer}
+  button:hover{background:var(--panel)}
+  .pager{display:flex;align-items:center;gap:10px;justify-content:center;margin:12px 0;flex-wrap:wrap}
+  .pager .info{font-size:13px;color:var(--muted)}
+  .pager button{min-width:38px}
+  .pager button:disabled{opacity:.35;cursor:default}
   table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-  th,td{padding:9px 12px;text-align:left;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
-  th{background:var(--panel2);color:var(--muted);font-weight:600;position:sticky;top:0}
+  th,td{padding:8px 11px;text-align:left;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+  th{background:var(--panel2);color:var(--muted);font-weight:600;position:sticky;top:60px;z-index:2;user-select:none;cursor:pointer;white-space:nowrap}
+  th.sorted{color:var(--text)}
+  th .dir{font-size:10px;margin-left:3px}
   tr:last-child td{border-bottom:none}
   tr:hover td{background:var(--panel2)}
-  .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
+  .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
   .b-ok{background:#23863622;color:var(--ok)} .b-stall{background:#d2992222;color:var(--stall)} .b-stall_unity{background:#a371f722;color:var(--stallu)} .b-fail{background:#f8514922;color:var(--fail)} .b-skipped{background:#6e768122;color:var(--skip)}
   a{color:#79c0ff;text-decoration:none}
   .link{cursor:pointer}
   .link:hover{text-decoration:underline}
   .err{cursor:help;color:var(--muted)}
-  img.thumb{width:120px;border-radius:6px;border:1px solid var(--border);cursor:pointer}
-  .modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:10}
-  .modal img{max-width:90vw;max-height:90vh;border-radius:8px}
-  .empty{color:var(--muted);text-align:center;padding:40px}
   .muted{color:var(--muted)}
+  img.thumb{width:110px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;display:block}
+  .modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:20}
+  .modal img{max-width:92vw;max-height:92vh;border-radius:8px}
+  .empty{color:var(--muted);text-align:center;padding:40px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-size:12px}
+  .ghosts{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+  .ghost{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px}
 </style>
 </head>
 <body>
@@ -54,92 +73,218 @@
 </header>
 <main>
   <div id="missing" class="empty" style="display:none">
-    No audit report found.<br><br>Run the audit first:<br>
-    <code>node other/audit.mjs --limit 10</code><br><br>
-    The full run checks all <b id="missingTotal"></b> games one by one.
+    No audit report found. Run the audit first:<br><br>
+    <code>node other/audit.mjs --screens</code>
   </div>
+
   <div id="content" style="display:none">
     <div class="cards" id="cards"></div>
     <div class="bar" id="bar"></div>
+
     <div class="toolbar">
-      <input type="text" id="q" placeholder="Search games…" oninput="render()">
-      <div class="chip on" data-f="all" onclick="setFilter(this)">All</div>
-      <div class="chip" data-f="ok" onclick="setFilter(this)">OK</div>
-      <div class="chip" data-f="stall_unity" onclick="setFilter(this)">Unity stall</div>
-      <div class="chip" data-f="stall" onclick="setFilter(this)">Stall</div>
-      <div class="chip" data-f="fail" onclick="setFilter(this)">Fail</div>
-      <div class="chip" data-f="skipped" onclick="setFilter(this)">Skipped</div>
+      <input type="text" id="q" placeholder="Search games…" oninput="state.page=1;render()">
+      <div class="chip on" data-f="all" onclick="setFilter(this)">All<span class="n" id="n-all"></span></div>
+      <div class="chip" data-f="ok" onclick="setFilter(this)">OK<span class="n" id="n-ok"></span></div>
+      <div class="chip" data-f="stall_unity" onclick="setFilter(this)">Unity stall<span class="n" id="n-stall_unity"></span></div>
+      <div class="chip" data-f="stall" onclick="setFilter(this)">Stall<span class="n" id="n-stall"></span></div>
+      <div class="chip" data-f="fail" onclick="setFilter(this)">Fail<span class="n" id="n-fail"></span></div>
+      <div class="chip" data-f="skipped" onclick="setFilter(this)">Skipped<span class="n" id="n-skipped"></span></div>
+      <button onclick="exportCSV()" title="Download filtered rows as CSV">⬇ CSV</button>
     </div>
+
+    <div class="pager">
+      <button id="pgprev" onclick="state.page--;render()">‹ Prev</button>
+      <span class="info" id="pginfo"></span>
+      <button id="pgnext" onclick="state.page++;render()">Next ›</button>
+      <select id="pagesize" onchange="state.pageSize=+this.value;state.page=1;render()">
+        <option value="25">25 / page</option>
+        <option value="50" selected>50 / page</option>
+        <option value="100">100 / page</option>
+        <option value="250">250 / page</option>
+        <option value="1000">1000 / page</option>
+      </select>
+    </div>
+
     <table>
-      <thead><tr><th>#</th><th>Game</th><th>Status</th><th>Canvas</th><th>Progress</th><th>Time</th><th>Note</th></tr></thead>
+      <thead><tr>
+        <th data-sort="index"># <span class="dir"></span></th>
+        <th data-sort="name">Game <span class="dir"></span></th>
+        <th data-sort="status">Status <span class="dir"></span></th>
+        <th data-sort="canvases">Canvas <span class="dir"></span></th>
+        <th data-sort="maxProgress">Progress <span class="dir"></span></th>
+        <th>Shot</th>
+        <th data-sort="time">Time <span class="dir"></span></th>
+        <th>Note</th>
+      </tr></thead>
       <tbody id="rows"></tbody>
     </table>
+
+    <div class="pager">
+      <button id="pgprev2" onclick="state.page--;render()">‹ Prev</button>
+      <span class="info" id="pginfo2"></span>
+      <button id="pgnext2" onclick="state.page++;render()">Next ›</button>
+    </div>
   </div>
 </main>
 <div class="modal" id="modal" onclick="this.style.display='none'"><img id="modalImg" src=""></div>
 
 <script>
 let report = null;
-let filter = "all";
-
+const statusOrder = { ok:0, stall_unity:1, stall:2, fail:3, skipped:4 };
 const badge = { ok:["b-ok","OK"], stall:["b-stall","Stall"], stall_unity:["b-stall_unity","Unity stall"], fail:["b-fail","Fail"], skipped:["b-skipped","Skip"] };
+const state = { q:"", filter:"all", page:1, pageSize:50, sort:null, asc:true };
 
 async function load(){
-  try {
-    const r = await fetch("/audit/report.json",{cache:"no-store"});
-    if(!r.ok) throw 0;
-    report = await r.json();
-  } catch {
+  const r = await fetch("/audit/report.json",{cache:"no-store"}).catch(()=>null);
+  if(!r || !r.ok){
     document.getElementById("missing").style.display="block";
-    document.getElementById("content").style.display="none";
-    document.getElementById("missingTotal").textContent = "...";
     return;
   }
+  report = await r.json();
   document.getElementById("missing").style.display="none";
   document.getElementById("content").style.display="block";
   const pill = document.getElementById("pill");
-  pill.textContent = report.running ? "RUNNING — refresh in a bit" : "finished " + (report.generated||"").replace("T"," ").slice(0,19) + (report.total? " · "+report.total+" games total":"");
+  const gen = (report.generated||"").replace("T"," ").slice(0,19);
+  pill.textContent = report.running ? "RUNNING — refresh to see progress" : (report.total? report.total+" games total · " : "") + gen;
   pill.className = "status-pill" + (report.running? " live":"");
+  document.querySelectorAll("th[data-sort]").forEach((th)=> th.addEventListener("click", ()=>{ const s=th.dataset.sort; if(state.sort===s) state.asc=!state.asc; else { state.sort=s; state.asc=true; } document.querySelectorAll("th[data-sort]").forEach((t)=> t.classList.remove("sorted")); th.classList.add("sorted"); th.querySelector(".dir").textContent = state.asc? "▲":"▼"; state.page=1; render(); }));
   render();
 }
 
-function setFilter(e){ e.classList.toggle("on", true); document.querySelectorAll(".chip").forEach(c=> c.classList.toggle("on", c===e)); filter=e.dataset.f; render(); }
+const parseTime = (t) => parseFloat(String(t||"").replace(/[^\d.]/g,""));
+const sumTimes = (rows) => {
+  let s=0,n=0;
+  for(const r of rows){ const v=parseTime(r.time_s); if(!isNaN(v)){s+=v;n++;} }
+  return n? s/n : 0;
+};
+
+const checked = (report) => (report.rows||[]).filter((r)=>r.status!=="skipped");
+
+function renderCards(){
+  const rows = report.rows||[];
+  const ck = checked(report);
+  const counts = report.counts || { ok:0, stall:0, stall_unity:0, fail:0, skipped:0 };
+  const c = { ...{ok:0,stall:0,stall_unity:0,fail:0,skipped:0}, ...counts };
+  const done = c.ok+c.stall+c.stall_unity+c.fail;
+  const pct = (n)=> done? Math.round(n/done*100)+"%" : "—";
+  const avg = sumTimes(ck);
+  const fmt = (s)=>{ const m=Math.floor(s/60), sec=Math.round(s%60); return m? m+"m "+sec+"s" : s.toFixed(1)+"s"; };
+
+  const card = (cls, num, lbl, sub, fillPct) =>
+    `<div class="card c-${cls}"><div class="num">${num}</div><div class="lbl">${lbl}</div>${sub?`<div class="sub">${sub}</div>`:""}<div class="mini"><i style="width:${fillPct}%"></i></div></div>`;
+
+  const full = (n)=> done? Math.max(3, Math.round(n/done*100)) : 0;
+  document.getElementById("cards").innerHTML = [
+    card("total", report.total ?? rows.length, "TOTAL GAMES", "checked " + done, done? Math.round(done/(report.total||1)*100) : 0),
+    card("ok", c.ok, "OK ✅", `${pct(c.ok)} · avg ${avg? fmt(avg) : "—"}`, full(c.ok)),
+    card("stall", c.stall, "STALL", pct(c.stall), full(c.stall)),
+    card("stallu", c.stall_unity, "UNITY STALL", pct(c.stall_unity), full(c.stall_unity)),
+    card("fail", c.fail, "FAIL ❌", pct(c.fail), full(c.fail)),
+    card("skip", c.skipped, "SKIPPED", c.skipped? Math.round(c.skipped/(report.total||1)*100)+"% of total":"", c.skipped? Math.round(c.skipped/(report.total||1)*100):0),
+  ].join("");
+
+  const seg = (key, cls) => {
+    const n = c[key];
+    if(!n) return "";
+    const w = done? (n/done*100).toFixed(1) : 0;
+    return `<div class="s-${cls}" style="width:${w}%" title="${key}: ${n} (${w}%)" onclick="setFilter(statusChip('${key}'))">${w>7? n:""}</div>`;
+  };
+  document.getElementById("bar").innerHTML = seg("ok","ok") + seg("stall_unity","stall_unity") + seg("stall","stall") + seg("fail","fail") + seg("skipped","skipped");
+  if(!done) document.getElementById("bar").innerHTML = "";
+
+  const chipN = (key, el) => { const elx=document.getElementById(el); if(elx){ elx.textContent = key==="all"? rows.length : (report.counts?.[key] || 0); } };
+  chipN("all","n-all"); chipN("ok","n-ok"); chipN("stall","n-stall"); chipN("stall_unity","n-stall_unity"); chipN("fail","n-fail"); chipN("skipped","n-skipped");
+}
+window.statusChip = (key) => { const c = document.querySelector(`.chip[data-f="${key}"]`); return c || {dataset:{f:key}}; };
+
+function setFilter(elem){
+  const f = typeof elem === "string" ? elem : elem.dataset.f;
+  document.querySelectorAll(".chip").forEach((c)=> c.classList.toggle("on", c.dataset.f===f));
+  state.filter = f; state.page = 1; render();
+}
+
+function getRows(){
+  let rows = report.rows||[];
+  if(state.filter!=="all") rows = rows.filter((r)=> r.status===state.filter);
+  if(state.q){
+    const q = state.q.toLowerCase();
+    rows = rows.filter((r)=> (r.name+" "+(r.note||"")+" "+(r.errors||"")).toLowerCase().includes(q));
+  }
+  if(state.sort){
+    const s = state.sort, dir = state.asc? 1 : -1;
+    rows = [...rows].sort((a,b)=>{
+      let x,y;
+      if(s==="index"){ x=a.index; y=b.index; }
+      else if(s==="status"){ x=statusOrder[a.status]??99; y=statusOrder[b.status]??99; }
+      else if(s==="canvases"){ x=a.canvases??-1; y=b.canvases??-1; }
+      else if(s==="maxProgress"){ x=a.maxProgress??-1; y=b.maxProgress??-1; }
+      else if(s==="time"){ x=parseTime(a.time_s)||0; y=parseTime(b.time_s)||0; }
+      else { x=(a.name||"").toLowerCase(); y=(b.name||"").toLowerCase(); }
+      return (x<y?-1 : x>y?1 : 0) * dir;
+    });
+  }
+  return rows;
+}
 
 function render(){
   if(!report) return;
-  const c = report.counts || {};
-  const cards = document.getElementById("cards");
-  cards.innerHTML = [["ok",c.ok||0],["stall",c.stall||0],["stallu",c.stall_unity||0],["fail",c.fail||0],["skip",c.skipped||0]]
-    .map(([k,n]) => `<div class="card ${k}"><div class="num">${n}</div><div class="lbl">${({ok:"OK",stall:"Stall",stallu:"Unity stall",fail:"Fail",skip:"Skip"})[k]}</div></div>`).join("");
-  const ok=(c.ok||0)+(c.stall||0)+(c.stall_unity||0), tot=(c.ok||0)+(c.stall||0)+(c.stall_unity||0)+(c.fail||0);
-  const pct = tot? Math.round(ok/tot*100):0;
-  document.getElementById("bar").innerHTML =
-    `<i style="width:${pct}%;background:#3fb950"></i>`;
-  const q = (document.getElementById("q").value||"").toLowerCase();
-  const rows = report.rows || [];
-  const tbody = document.getElementById("rows");
-  tbody.innerHTML = "";
-  let n=0;
-  for(const r of rows){
-    if(filter!=="all" && r.status!==filter) continue;
-    if(q && !r.name.toLowerCase().includes(q) && !(r.note||"").toLowerCase().includes(q)) continue;
-    n++;
-    const b=badge[r.status]||badge.fail;
-    const shot = r.screenshot? `<img class="thumb" src="/audit/screens/${encodeURIComponent(r.screenshot)}" onclick="return showShot(this)">` : `<span class="muted">—</span>`;
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td class="muted">${r.index}</td>
-      <td>${r.name} <a class="muted link" onclick="return openRow(this)" data-url="${encodeURIComponent(r.url||'')}" title="${r.title||''}">↗</a></td>
-      <td><span class="badge ${b[0]}">${b[1]}</span></td>
-      <td>${r.canvases??"-"}</td>
-      <td>${(r.progress||(r.maxProgress? r.maxProgress+"%":"-"))}</td>
-      <td>${r.time_s||"-"}</td>
-      <td title="${(r.errors||"").replace(/"/g,"&quot;")}" class="${r.errors?"err":""}">${r.note||"-"}</td>`;
-    tbody.appendChild(tr);
+  renderCards();
+  const rows = getRows();
+  const total = rows.length;
+  const pages = Math.max(1, Math.ceil(total/state.pageSize));
+  if(state.page>pages) state.page=pages;
+  if(state.page<1) state.page=1;
+  const start = (state.page-1)*state.pageSize;
+  const slice = rows.slice(start, start+state.pageSize);
+  const yo = (a,b)=> document.getElementById(a).textContent = b;
+
+  for(const [a,b] of [["pgprev",state.page>1],["pgprev2",state.page>1],["pgnext",state.page<pages],["pgnext2",state.page<pages]]) {
+    document.getElementById(a).disabled = !b;
   }
-  if(!n) tbody.innerHTML=`<tr><td colspan="7" class="empty">no games match</td></tr>`;
+  const info = `Showing ${total? start+1 : 0}–${Math.min(start+state.pageSize,total)} of ${total} · page ${state.page}/${pages}`;
+  yo("pginfo",info); yo("pginfo2",info);
+
+  const tb = document.getElementById("rows");
+  tb.innerHTML = "";
+  if(!slice.length){
+    tb.innerHTML = `<tr><td colspan="8" class="empty">no games match</td></tr>`;
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  for(const r of slice){
+    const b = badge[r.status]||badge.fail;
+    const shot = r.screenshot ? `<img class="thumb" loading="lazy" src="/audit/screens/${encodeURIComponent(r.screenshot)}" onclick="return showShot(this)">` : `<span class="muted">—</span>`;
+    const tr = document.createElement("tr");
+    tr.style.cursor = "pointer";
+    tr.onclick = () => window.open("/tab?page="+encodeURIComponent(r.url||""), "_blank");
+    const err = `<span class="err" title="${(r.errors||"-").replace(/"/g,"&quot;").slice(0,300)}">${r.errors? "⚠ "+r.errors.slice(0,40)+"…" : "-"}</span>`;
+    tr.innerHTML = `<td class="muted">${r.index}</td>
+      <td><b>${r.name}</b><div class="muted" style="font-size:11px">${r.title||""}</div></td>
+      <td><span class="badge ${b[0]}" onclick="event.stopPropagation()">${b[1]}</span></td>
+      <td>${r.canvases??"-"}</td>
+      <td>${r.progress || ((r.maxProgress||0)>0? r.maxProgress+"%":"-")}</td>
+      <td>${shot}</td>
+      <td>${r.time_s||"-"}</td>
+      <td title="${(r.note||"").replace(/"/g,"&quot;")}">${r.note||"-"}<br>${err}</td>`;
+    frag.appendChild(tr);
+  }
+  tb.appendChild(frag);
 }
+
+function exportCSV(){
+  const rows = getRows();
+  const esc = (v)=> "\"" + String(v==null?"":v).replace(/"/g,"\"\"") + "\"";
+  const lines = ["name,status,index,canvases,maxProgress,time_s,note,errors,url"];
+  for(const r of rows) lines.push([r.name,r.status,r.index,r.canvases??"",(r.maxProgress??"")+"%",r.time_s,r.note,(r.errors||"").replace(/\s+/g," "),r.url].map(esc).join(","));
+  const blob = new Blob([lines.join("\n")], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "audit-" + state.filter + "-" + new Date().toISOString().slice(0,10) + ".csv";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+
 window.showShot = (img)=>{ document.getElementById("modalImg").src=img.src; document.getElementById("modal").style.display="flex"; return false; };
-window.openRow = (a)=> { window.open("/tab?page="+a.dataset.url); return false; };
 load();
 </script>
 </body>
